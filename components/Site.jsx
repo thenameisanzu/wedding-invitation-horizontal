@@ -85,37 +85,127 @@ export default function Site() {
   useEffect(() => { const t = setTimeout(() => setReady(true), 3000); return () => clearTimeout(t) }, [])
   useEffect(() => {
     let to, touch = false
+    let touchStartX = 0, touchStartY = 0
+    let lastY = typeof window !== 'undefined' ? window.scrollY : 0
+    let dir = 0
+
     const snap = () => {
       if (touch || !ref.current) return
-      const el = ref.current, tot = el.offsetHeight - innerHeight
+      const el = ref.current
+      const tot = el.offsetHeight - window.innerHeight
       if (tot <= 0) return
-      const pr = (scrollY - el.offsetTop) / tot
+      const currentY = window.scrollY
+      const pr = (currentY - el.offsetTop) / tot
       if (pr < 0 || pr > 1) return
-      scrollTo({ top: el.offsetTop + (Math.round(pr * (N - 1)) / (N - 1)) * tot, behavior: 'smooth' })
+
+      const rawIdx = pr * (N - 1)
+      let targetIdx = Math.round(rawIdx)
+      if (dir > 0 && rawIdx > Math.floor(rawIdx) + 0.08) {
+        targetIdx = Math.min(N - 1, Math.ceil(rawIdx))
+      } else if (dir < 0 && rawIdx < Math.ceil(rawIdx) - 0.08) {
+        targetIdx = Math.max(0, Math.floor(rawIdx))
+      }
+
+      window.scrollTo({
+        top: el.offsetTop + (targetIdx / (N - 1)) * tot,
+        behavior: 'smooth'
+      })
     }
+
     const f = () => {
+      const currentY = window.scrollY
+      if (Math.abs(currentY - lastY) > 4) {
+        dir = currentY > lastY ? 1 : -1
+        lastY = currentY
+      }
       clearTimeout(to)
-      to = setTimeout(snap, 450)
+      to = setTimeout(snap, 350)
       const el = ref.current
       if (el) {
-        const tot = el.offsetHeight - innerHeight
-        if (tot > 0) setIdx(Math.round(((scrollY - el.offsetTop) / tot) * (N - 1)))
+        const tot = el.offsetHeight - window.innerHeight
+        if (tot > 0) {
+          setIdx(Math.min(N - 1, Math.max(0, Math.round(((currentY - el.offsetTop) / tot) * (N - 1)))))
+        }
       }
     }
-    const w = (e) => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) scrollBy({ top: e.deltaX }) }
-    const ts = () => (touch = true), te = () => { touch = false; f() }
-    const k = (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') go(Math.min(N - 1, Math.max(0, idx + (e.key === 'ArrowRight' ? 1 : -1)))) }
-    addEventListener('scroll', f, { passive: true }); addEventListener('wheel', w, { passive: true }); addEventListener('touchstart', ts, { passive: true }); addEventListener('touchend', te, { passive: true }); addEventListener('keydown', k)
-    return () => { clearTimeout(to); removeEventListener('scroll', f); removeEventListener('wheel', w); removeEventListener('touchstart', ts); removeEventListener('touchend', te); removeEventListener('keydown', k) }
+
+    const w = (e) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        e.preventDefault()
+        window.scrollBy({ top: e.deltaX * 1.2, behavior: 'auto' })
+      }
+    }
+
+    const ts = (e) => {
+      touch = true
+      if (e.touches?.[0]) {
+        touchStartX = e.touches[0].clientX
+        touchStartY = e.touches[0].clientY
+      }
+    }
+
+    const tm = (e) => {
+      if (!touchStartX || !ref.current) return
+      const dx = touchStartX - e.touches[0].clientX
+      const dy = touchStartY - e.touches[0].clientY
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (e.cancelable) e.preventDefault()
+        window.scrollBy({ top: dx * 1.2, behavior: 'auto' })
+        touchStartX = e.touches[0].clientX
+      }
+    }
+
+    const te = () => {
+      touch = false
+      touchStartX = 0
+      touchStartY = 0
+      f()
+    }
+
+    const k = (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        go(Math.min(N - 1, idx + 1))
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        go(Math.max(0, idx - 1))
+      }
+    }
+
+    window.addEventListener('scroll', f, { passive: true })
+    window.addEventListener('wheel', w, { passive: false })
+    window.addEventListener('touchstart', ts, { passive: true })
+    window.addEventListener('touchmove', tm, { passive: false })
+    window.addEventListener('touchend', te, { passive: true })
+    window.addEventListener('keydown', k)
+
+    return () => {
+      clearTimeout(to)
+      window.removeEventListener('scroll', f)
+      window.removeEventListener('wheel', w)
+      window.removeEventListener('touchstart', ts)
+      window.removeEventListener('touchmove', tm)
+      window.removeEventListener('touchend', te)
+      window.removeEventListener('keydown', k)
+    }
   }, [idx])
-  const go = (i) => { const el = ref.current; if (el) scrollTo({ top: el.offsetTop + (i / (N - 1)) * (el.offsetHeight - innerHeight), behavior: 'smooth' }) }
+  const go = (i) => {
+    const el = ref.current
+    if (el) {
+      const tot = el.offsetHeight - window.innerHeight
+      window.scrollTo({
+        top: el.offsetTop + (i / (N - 1)) * tot,
+        behavior: 'smooth'
+      })
+    }
+  }
   const send = (e) => { e.preventDefault(); setBurst((b) => b + 1); setTimeout(() => open(wa(`Hi, this is ${name}.\n${yes ? `I will joyfully attend with ${guests} guest${guests > 1 ? 's' : ''}.` : 'I regret that I cannot attend.'}`), '_blank'), 700) }
 
   return (
     <MotionConfig reducedMotion="user">
       <Cursor />
       <AnimatePresence>{!ready && (
-        <motion.div key="curtain" className="fixed inset-0 z-[250] flex items-center justify-center text-ivory" exit={{ opacity: 0, transition: { duration: 0.9, delay: 0.45, ease: [0.65, 0, 0.35, 1] } }}>
+        <motion.div key="curtain" onClick={() => setReady(true)} className="fixed inset-0 z-[250] flex cursor-pointer items-center justify-center text-ivory" exit={{ opacity: 0, transition: { duration: 0.9, delay: 0.45, ease: [0.65, 0, 0.35, 1] } }}>
           {[0, 1].map((s) => <motion.div key={s} className="absolute inset-y-0 bg-wine will-change-transform" style={{ [s ? 'right' : 'left']: 0, width: '50.2%' }} exit={{ x: s ? '100%' : '-100%' }} transition={{ duration: 1.35, ease: [0.77, 0, 0.175, 1] }} />)}
           <motion.div className="relative text-center" exit={{ opacity: 0, scale: 1.15 }} transition={{ duration: 0.85, ease: [0.65, 0, 0.35, 1] }}>
             <svg viewBox="0 0 120 120" className="mx-auto h-32 w-32" fill="none" stroke="#D8B98A" strokeWidth="1.5"><motion.circle cx="60" cy="60" r="54" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.8, ease: [0.65, 0, 0.35, 1] }} /><motion.circle cx="60" cy="60" r="46" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.8, delay: .25, ease: [0.65, 0, 0.35, 1] }} /></svg>
@@ -169,7 +259,7 @@ export default function Site() {
               </Par>
               <motion.svg viewBox="0 0 200 200" className="absolute right-4 top-24 w-24 md:right-16 md:w-36 will-change-transform" animate={{ rotate: 360 }} transition={{ duration: 25, repeat: Infinity, ease: 'linear' }} aria-hidden><path id="c" d="M100 100m-70 0a70 70 0 1 1 140 0a70 70 0 1 1-140 0" fill="none" /><text fontSize="17" letterSpacing="3" fill="#B58A5A"><textPath href="#c">save the date • 20.03.2027 • save the date •</textPath></text></motion.svg>
               <Branch t={t} className="absolute -left-4 top-24 h-64 opacity-80 md:left-8" />
-              <motion.p animate={{ x: [0, 8, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }} className="absolute bottom-6 right-6 text-sm tracking-[.3em]">SCROLL →</motion.p>
+              <motion.button onClick={() => go(1)} animate={{ x: [0, 8, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }} className="absolute bottom-6 right-6 cursor-pointer text-sm tracking-[.3em] transition-colors hover:text-champ">SCROLL →</motion.button>
             </>)}</Panel>
 
             <Panel p={p} i={1} bg="#FBF6F0">{(t) => (<>

@@ -1,5 +1,5 @@
 @tailwind base;@tailwind components;@tailwind utilities;
-html{background:#4A0F1F;-webkit-tap-highlight-color:transparent;scroll-behavior:smooth}
+html{background:#4A0F1F;-webkit-tap-highlight-color:transparent}
 body{@apply font-sans text-wine antialiased;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
 @media (pointer:fine){body,a,button{cursor:none}}
 body::after{content:"";position:fixed;inset:0;z-index:300;pointer-events:none;opacity:.2;mix-blend-mode:multiply;
