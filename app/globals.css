@@ -1,10 +1,60 @@
-@tailwind base;@tailwind components;@tailwind utilities;
-html{background:#4A0F1F;-webkit-tap-highlight-color:transparent}
-body{@apply font-sans text-wine antialiased;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
-@media (pointer:fine){body,a,button{cursor:none}}
-body::after{content:"";position:fixed;inset:0;z-index:300;pointer-events:none;opacity:.2;mix-blend-mode:multiply;
-background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
-@keyframes tw{0%,100%{opacity:.25;transform:scale(.75)}50%{opacity:1;transform:scale(1)}}
-.spark{animation:tw 3.2s cubic-bezier(.4,0,.2,1) infinite}
-:focus-visible{outline:2px solid #B58A5A;outline-offset:3px}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  background: #4A0F1F;
+  -webkit-tap-highlight-color: transparent;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  @apply font-sans text-wine antialiased;
+  overflow: hidden;
+  height: 100%;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@media (pointer: fine) {
+  body, a, button {
+    cursor: none;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  pointer-events: none;
+  opacity: .18;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+
+@keyframes tw {
+  0%, 100% { opacity: .25; transform: scale(.75); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.spark {
+  animation: tw 3.2s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+
+:focus-visible {
+  outline: 2px solid #B58A5A;
+  outline-offset: 3px;
+}
 
